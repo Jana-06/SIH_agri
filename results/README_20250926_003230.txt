@@ -1,0 +1,19 @@
+Agricultural Monitoring Analysis Results
+=======================================
+
+Analysis Date: 26-Sep-2025 00:32:31
+Analysis Type: AI-Powered Agricultural Monitoring
+Version: 1.0
+
+Files Description:
+- crop_health_*.mat: Crop health analysis results
+- soil_condition_*.mat: Soil condition analysis results
+- pest_risks_*.mat: Pest risk analysis results
+- comprehensive_report_*.mat: Complete analysis report
+- combined_results_*.mat: All results combined
+- summary_*.csv: Summary data in CSV format
+- *_map_*.png: Visualization maps
+- metadata_*.mat: Analysis metadata
+- README_*.txt: This file
+
+For questions or support, contact the development team.
