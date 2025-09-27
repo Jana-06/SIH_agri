@@ -5,9 +5,8 @@
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-  PYTHONUNBUFFERED=1 \
-  PORT=5001 \
-  DEMO_MODE=1
+    PYTHONUNBUFFERED=1 \
+    PORT=5001
 
 # System deps (curl for healthcheck, fonts for matplotlib if needed)
 RUN apt-get update && apt-get install -y --no-install-recommends \

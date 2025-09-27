@@ -5,7 +5,6 @@ import os
 import re
 import io
 import random
-import shutil
 from datetime import datetime
 
 try:
@@ -36,7 +35,7 @@ def run_matlab():
             demo_output = generate_demo_results(RESULTS_DIR)
             image_files = [f for f in os.listdir(RESULTS_DIR) if f.endswith('.png')]
             image_urls = [f'/results/{f}' for f in image_files]
-            return jsonify({'output': demo_output, 'images': image_urls, 'full_context': demo_output, 'mode': 'demo'})
+            return jsonify({'output': demo_output, 'images': image_urls, 'full_context': demo_output})
 
         # The main MATLAB script to be executed is 'main.m'
         # The script should be in the root directory of the project
@@ -47,30 +46,14 @@ def run_matlab():
 
         # Construct the command to run the main script
         matlab_cmd = os.getenv('MATLAB_CMD', 'matlab')
-
-        # If MATLAB command is not available, auto-fallback to demo mode (unless STRICT_MATLAB=1)
-        if shutil.which(matlab_cmd) is None and os.getenv('STRICT_MATLAB', '0') != '1':
-            demo_output = ("MATLAB not found on PATH; running in DEMO mode. Set DEMO_MODE=0 and ensure MATLAB_CMD "
-                           "points to a valid MATLAB binary to run full analysis.\n\n" + generate_demo_results(RESULTS_DIR))
-            image_files = [f for f in os.listdir(RESULTS_DIR) if f.endswith('.png')]
-            image_urls = [f'/results/{f}' for f in image_files]
-            return jsonify({'output': demo_output, 'images': image_urls, 'full_context': demo_output, 'mode': 'demo'})
         command = f"{matlab_cmd} -batch \"cd('{matlab_script_path_for_cd}'); addpath(pwd); main;\""
         
         # Execute the command
         process = subprocess.run(command, shell=True, capture_output=True, text=True, cwd=matlab_script_path)
 
         if process.returncode != 0:
-            # Gracefully fallback to demo if MATLAB is missing or can't be invoked
-            stderr = (process.stdout or '') + (process.stderr or '')
-            missing_msg = '/bin/sh: 1: matlab: not found'
-            if (('not found' in stderr.lower() and 'matlab' in stderr.lower()) or process.returncode == 127) and os.getenv('STRICT_MATLAB', '0') != '1':
-                demo_output = ("MATLAB command failed or not found; running in DEMO mode instead. Error details:\n" + stderr + "\n\n" + generate_demo_results(RESULTS_DIR))
-                image_files = [f for f in os.listdir(RESULTS_DIR) if f.endswith('.png')]
-                image_urls = [f'/results/{f}' for f in image_files]
-                return jsonify({'output': demo_output, 'images': image_urls, 'full_context': demo_output, 'mode': 'demo'})
-            # Otherwise, return the error details for debugging
-            return jsonify({'error': 'MATLAB script execution failed.', 'details': stderr})
+            # If MATLAB fails, return the error details for debugging
+            return jsonify({'error': 'MATLAB script execution failed.', 'details': process.stdout + process.stderr})
 
         output = process.stdout
         
@@ -79,7 +62,7 @@ def run_matlab():
         image_urls = [f'/results/{f}' for f in image_files]
 
         # Return the full output and image URLs
-        return jsonify({'output': output, 'images': image_urls, 'full_context': output, 'mode': 'matlab'})
+        return jsonify({'output': output, 'images': image_urls, 'full_context': output})
 
     except Exception as e:
         return jsonify({'error': str(e)})
