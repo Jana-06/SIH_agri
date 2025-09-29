@@ -1,0 +1,13 @@
+{
+  "hosting": {
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "sih-agri-api",
+          "region": "us-central1"
+        }
+      }
+    ]
+  }
+}
