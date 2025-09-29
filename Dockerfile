@@ -39,5 +39,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 # Set working directory to the Flask app folder so templates/static resolve correctly
 WORKDIR /app/flask_server
 
-# Run with gunicorn for production
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5001", "app:app"]
+# Run with gunicorn for production; bind to $PORT (Cloud Run sets PORT)
+CMD ["sh", "-c", "gunicorn -w 2 -b 0.0.0.0:${PORT} app:app"]

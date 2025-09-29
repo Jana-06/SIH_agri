@@ -56,7 +56,9 @@ def run_matlab():
             image_urls = [f'/results/{f}' for f in image_files]
             return jsonify({'output': demo_output, 'images': image_urls, 'full_context': demo_output, 'mode': 'demo'})
 
-        command = f"{matlab_cmd} -batch \"cd('{matlab_script_path_for_cd}'); addpath(pwd); main;\""
+    # Quote the MATLAB binary in case the path contains spaces (e.g., Windows Program Files)
+    quoted_matlab = f'"{matlab_cmd}"' if ' ' in matlab_cmd and not matlab_cmd.startswith('"') else matlab_cmd
+            command = f"{quoted_matlab} -batch \"cd('{matlab_script_path_for_cd}'); addpath(pwd); main;\""
         
         # Execute the command
         process = subprocess.run(command, shell=True, capture_output=True, text=True, cwd=matlab_script_path)
