@@ -16,14 +16,34 @@ document.addEventListener('DOMContentLoaded', () => {
     runButton.addEventListener('click', () => {
         runButton.style.display = 'none';
         loader.style.display = 'block';
-        outputSummary.innerHTML = '<p>Executing MATLAB script, please wait...</p>';
+    outputSummary.innerHTML = '<p>Executing analysis, please wait...</p>';
         imageDashboard.innerHTML = '';
         analysisContext = '';
 
         fetch('/run-matlab', { method: 'POST' })
             .then(response => response.json())
             .then(data => {
+                // If backend indicates demo mode, reflect it in UI
+                if (!data.error && data.mode === 'demo') {
+                    const banner = document.createElement('div');
+                    banner.className = 'info-banner';
+                    banner.textContent = 'Demo mode active (MATLAB not available). Showing simulated analysis.';
+                    outputSummary.innerHTML = '';
+                    outputSummary.appendChild(banner);
+                }
+
                 if (data.error) {
+                    // If matlab not found, try demo endpoint automatically
+                    const details = (data.details || '').toLowerCase();
+                    if (details.includes('matlab') && details.includes('not found')) {
+                        return fetch('/run-demo', { method: 'POST' })
+                            .then(r => r.json())
+                            .then(demo => {
+                                analysisContext = demo.full_context || '';
+                                parseAndDisplaySummary(analysisContext);
+                                renderImages(demo.images);
+                            });
+                    }
                     let errorMsg = `<p>Error: ${data.error}</p>`;
                     if (data.details) {
                         errorMsg += `<pre>${data.details}</pre>`;
@@ -33,29 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     analysisContext = data.full_context;
                     parseAndDisplaySummary(analysisContext);
-                    
-                    if (data.images && data.images.length > 0) {
-                        data.images.forEach(url => {
-                            const imgContainer = document.createElement('div');
-                            imgContainer.className = 'image-container';
-
-                            const fileName = url.split('/').pop();
-                            const cleanName = fileName.replace(/\.png$/i, '').replace(/_/g, ' ');
-                            
-                            const title = document.createElement('h3');
-                            title.textContent = cleanName.replace(/(?:^|\s)\S/g, a => a.toUpperCase());
-
-                            const img = document.createElement('img');
-                            img.src = url;
-                            img.alt = title.textContent;
-                            
-                            imgContainer.appendChild(title);
-                            imgContainer.appendChild(img);
-                            imageDashboard.appendChild(imgContainer);
-                        });
-                    } else {
-                        imageDashboard.innerHTML = '<p>No visualization images were generated.</p>';
-                    }
+                    renderImages(data.images);
                 }
             })
             .catch(error => {
@@ -194,6 +192,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 outputSummary.appendChild(categoryDiv);
             }
+        }
+    }
+
+    function renderImages(images) {
+        imageDashboard.innerHTML = '';
+        if (images && images.length > 0) {
+            images.forEach(url => {
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'image-container';
+
+                const fileName = url.split('/').pop();
+                const cleanName = fileName.replace(/\.png$/i, '').replace(/_/g, ' ');
+
+                const title = document.createElement('h3');
+                title.textContent = cleanName.replace(/(?:^|\s)\S/g, a => a.toUpperCase());
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = title.textContent;
+
+                imgContainer.appendChild(title);
+                imgContainer.appendChild(img);
+                imageDashboard.appendChild(imgContainer);
+            });
+        } else {
+            imageDashboard.innerHTML = '<p>No visualization images were generated.</p>';
         }
     }
 });
